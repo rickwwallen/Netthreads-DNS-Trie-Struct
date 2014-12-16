@@ -25,3 +25,8 @@ Directory name and files:
 		|-- structs_netfpga.h
 		|-- triez_netfpga.c
 		`-- triez_netfpga.h
+
+This goes in src/bench/ altered to remove the embed generated file for make embed_clean.
+
+		../
+		|-- footer.mk

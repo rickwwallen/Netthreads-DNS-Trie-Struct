@@ -24,7 +24,7 @@
 /**********************************************************************/
 //#include "structs_netfpga.h"
 #include "dns_netfpga.h"
-#include "my_inet.c"
+//#include "my_inet.c"
 #include "triez_netfpga.c"
 #include "shared_functions_netfpga.c"
 

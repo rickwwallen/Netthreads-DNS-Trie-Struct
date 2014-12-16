@@ -13,7 +13,7 @@ compile, though the code is in a state for testing.
 
 Directory name and files:
 
-	../ricks_netfpga_dns/
+		./
 		|-- Makefile
 		|-- README.md
 		|-- dev.c

@@ -13,26 +13,26 @@ compile, though the code is in a state for testing.
 
 Directory name and files:
 
-../ricks_netfpga_dns/
+	--ricks_netfpga_dns/
 
-|-- Makefile
+		|-- Makefile
 
-|-- README.md
+		|-- README.md
 
-|-- dev.c
+		|-- dev.c
 
-|-- dev.h
+		|-- dev.h
 
-|-- dns_netfpga.h
+		|-- dns_netfpga.h
 
-|-- ricks_netfpga_dns.c
+		|-- ricks_netfpga_dns.c
 
-|-- shared_functions_netfpga.c
+		|-- shared_functions_netfpga.c
 
-|-- shared_functions_netfpga.h
+		|-- shared_functions_netfpga.h
 
-|-- structs_netfpga.h
+		|-- structs_netfpga.h
 
-|-- triez_netfpga.c
+		|-- triez_netfpga.c
 
-`-- triez_netfpga.h
+		`-- triez_netfpga.h

@@ -532,7 +532,7 @@ int main(void)
 	//00:4e:46:32:43:02
 	//00:4e:46:32:43:03
 	
-	arp_init(&iface.arp);
+	//arp_init(&iface.arp);
 	
 	iface.mac[0] = 0x00;
 	iface.mac[1] = 0x4e;

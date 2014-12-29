@@ -114,16 +114,16 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 	u_int32_t acc;
 
 	// Create and send a reply.
-	if (pkt_alloc(&reply,
-		sizeof(struct ioq_header) +
-		sizeof(struct ether_header) +
-		sizeof(struct iphdr) +
-		sizeof(struct udphdr) +
-		sizeof(DnsHeader) +
-		pkt->len) == 0)
-	{
-	  return -15;
-	}
+	//if (pkt_alloc(&reply,
+	//	sizeof(struct ioq_header) +
+	//	sizeof(struct ether_header) +
+	//	sizeof(struct iphdr) +
+	//	sizeof(struct udphdr) +
+	//	sizeof(DnsHeader) +
+	//	pkt->len) == 0)
+	//{
+	//  return -15;
+	//}
 
 	// allocate reply size
 	// ***TODO***
@@ -217,7 +217,7 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 // Process DNS Query
 int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, DnsHeader *dns, t_addr *pkt)
 {
-	DnsHeader *dnshdr;		// DNS header pointer
+	//DnsHeader *dnshdr;		// DNS header pointer
 	DnsHeader head;			// Hold header information
 	DnsHdrFlags fl;			// Hold flag information
 	DnsQuery qry[QRY_NO];		// Holds all the queries' qtype and qclass
@@ -227,6 +227,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	char nme[DNM_SZ];		// Name
 	char dmn[DNM_SZ][QRY_NO];	// Holds all the queries' domain names
 	int offset;			// Offset of message parsing
+	int offset2;			// Offset of message parsing holds query offset
 	int qdc = QRY_NO;		// Number of queries allowed in message
 	int i;
 	int rc;				// Return Code
@@ -257,11 +258,11 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	log("DATE TS,ID,QUERY QR,OPCODE,QDCOUNT,QUERY,QTYPE,QCLASS,RCODE,ANCOUNT,NSCOUNT,ARCOUNT,TIME TO LOOKUP(SECONDS),TIME TO SEND BACK(SECONDS)\n");
 
 	//DnsHeader *dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
-	memcpy(msg, pkt->head, pkt->len);
-	dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
+	memcpy(msg, pkt, ntohs(ioq->byte_length));
+	//dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
 
 	//memcpy(msg, pkt->head, pkt-len);
-
+	
 	strToHdr(msg, &head);
 	u16IToFlags(&fl, head.flags);
 	//strToHdr(msg, &head);
@@ -297,6 +298,8 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 			//QUERY,QTYPE,QCLASS
 			log("%s,%d,%d,", dmn[i], (int) qry[i].qtype, (int) qry[i].qclass);
 		}
+		// holds query offset
+		offset2 = offset;
 
 		head.ancount = 0;
 		head.nscount = 0;
@@ -334,14 +337,16 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		log("%d,%d,%d,%d,", (int) fl.rcode, (int) head.ancount, (int) head.nscount, (int) head.arcount);
 		flagsToU16I(fl, &head.flags);
 		//hdrToStr(msg, &head);
-		hdrToStr(pkt->head, &head);
+		//hdrToStr(pkt->head, &head);
+		hdrToStr(dns, &head);
 
 		// Push to f(x) to build the DNS Response
 		//rc=send_dns(iface, ioq, eth, ip, udp, dnshdr, pkt, &msg);
-		memcpy(dnshdr, msg, offset); // Push the internal buffer msg to pkt
-		pkt_push(pkt, sizeof(DnsHeader));
-		pkt->len = offset;
-		rc=send_dns(iface, ioq, eth, ip, udp, dnshdr, pkt);
+		memcpy(dns, msg, sizeof(DnsHeader) + offset); // Push the internal buffer msg to pkt
+		//pkt_push(pkt, sizeof(DnsHeader));
+		//pkt->len = offset;
+		ioq->byte_length = htons(ntohs(ioq->byte_length) + (offset - offset2));
+		rc=send_dns(iface, ioq, eth, ip, udp, dns, pkt);
 
 		return rc;
 	}//end else from opcode check
@@ -366,7 +371,7 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 {
 	int rc;
 	u_int16_t check;
-	struct udphdr *udp;
+	//struct udphdr *udp;
 
 	// Most checks rely on pkt_buff structure and must be commented
 //	log("Process UDP of size %u\n", pkt->len);
@@ -467,7 +472,7 @@ int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_hea
 	int ihl;
 	int options_size;
 	u_int16_t check;
-	struct iphdr *ip;
+	//struct iphdr *ip;
 	void *options;
 
 	//Comment IP check, most use the pk_buff checks that couldn't get passed.

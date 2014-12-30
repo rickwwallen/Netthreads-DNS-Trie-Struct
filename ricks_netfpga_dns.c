@@ -112,6 +112,9 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 	struct udphdr *rudp;
 	DnsHeader *rdns;
 	u_int32_t acc;
+	int byte_size;
+
+	byte_size = ntohs(ioq->byte_length);
 
 	// Create and send a reply.
 	//if (pkt_alloc(&reply,
@@ -127,7 +130,7 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 
 	// allocate reply size
 	// ***TODO***
-	reply = nf_pktout_alloc(ICMP_PKT_SIZE);
+	reply = nf_pktout_alloc(byte_size);
 
 	//rioq		= pkt_pull(&reply, sizeof(struct ioq_header));
 	//reply_bytes	= (unsigned short) reply.len;
@@ -138,7 +141,7 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 	//fill_ioq(rioq, ioq->src_port, reply_bytes);
 	// setup the ioq_header
 	// ***TODO***
-	fill_ioq((struct ioq_header*) reply, 2, ICMP_PKT_SIZE);
+	fill_ioq((struct ioq_header*) reply, 2, byte_size);
 	
 	// setup the ethernet header
 	reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
@@ -168,7 +171,7 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 	rip->tos = ip->tos; // not sure about this one
 	// ***TODO***
 	//rip->tot_len = htons(20 + pkt->len);
-	rip->tot_len = htons(20 + 1000);
+	rip->tot_len = htons(20 + (byte_size - (sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr))));
 	rip->id = ip->id; // Lets use the id given
 	rip->frag_off = 0;
 	rip->ttl = IPDEFTTL;
@@ -191,21 +194,24 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 	rudp->source = udp->dest;
 	rudp->dest   = udp->source;
 	// ***TODO***
-	rudp->len    = htons(1000 + sizeof(struct udphdr));
+	//rudp->len    = htons(1000 + sizeof(struct udphdr));
+	rudp->len    = htons(ntohs(rip->tot_len) + sizeof(struct udphdr));
 
 	// init checksum to zero to calcualate
 	rudp->check = ntohs(0);
 
 	// calculate checksum
 	// ***TODO update total lenght***
-	acc = ones_complement_sum(rudp, (ntohs(ip->tot_len) - 20));
+	acc = ones_complement_sum(rudp, (ntohs(rip->tot_len) - 20));
 
 	// assign checksum
 	rudp->check = htons(acc);
 
 	// fill dns
 	// ***TODO ***
-	memcpy(rdns, dns, 1000);
+	//memcpy(rdns, dns, (byte_size - (sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct udphdr))));
+	//memcpy(rdns, dns, (ntohs(rip->tot_len) + sizeof(struct udphdr)));
+	memcpy(rdns, dns, ntohs(rudp->len));
 
 	// send it
 	// ***TODO***

@@ -55,8 +55,8 @@
 #define LNE_SZ 1025
 #define PKT_SZ 313	//byte size of UDP Packet 512 - 12(header) 500
 #define MAX_IP 65507	//Max byte size of UDP IPv4 is 6507 both include header
-//#define UDP_PT 53
-#define UDP_PT 32000
+#define UDP_PT 53
+//#define UDP_PT 32000
 #define IPV4STRLEN 16
 #define IPV6STRLEN 46
 #define MAXFD 64

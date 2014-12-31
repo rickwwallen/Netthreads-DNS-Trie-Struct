@@ -667,6 +667,10 @@ int main(void)
 {
 	t_addr *pkt;
 	struct net_iface iface;
+	struct ether_header *reth;
+	struct ether_arp *rarp;
+	unsigned char dest_mac[6];
+	unsigned char dest_ip[4];
 
 	// iface is not shared, it's on the stack
 	//00:4e:46:32:43:00
@@ -689,6 +693,18 @@ int main(void)
 	iface.ip[2] = 0;
 	iface.ip[3] = 100;
 
+	dest_mac[0] = 0xff;
+	dest_mac[1] = 0xff;
+	dest_mac[2] = 0xff;
+	dest_mac[3] = 0xff;
+	dest_mac[4] = 0xff;
+	dest_mac[5] = 0xff;
+
+	dest_ip[0] = 192;
+	dest_ip[1] = 168;
+	dest_ip[2] = 0;
+	dest_ip[3] = 1;
+
 	//only run this program on thread 0
 	if (nf_tid() != 0) 
 	{
@@ -698,6 +714,85 @@ int main(void)
 	// initialize
 	nf_pktout_init();
 	nf_pktin_init();
+
+	// This is to just send an ARP request to router
+	// allocate an output buffer
+	pkt = nf_pktout_alloc(PKT_SIZE);
+
+	// setup the ioq_header
+	fill_ioq((struct ioq_header*) pkt, 2, PKT_SIZE);
+
+	// setup the ethernet header
+	reth = (struct ether_header*) (pkt + sizeof(struct ioq_header));
+ 
+	// setup the ethernet arp
+	rarp = (struct ether_arp*) (pkt + sizeof(struct ioq_header) + sizeof(struct ether_header));
+
+	// start putting things into the packet
+	// ethernet
+	memcpy(reth->ether_shost, &iface.mac, ETH_ALEN);
+	memcpy(reth->ether_dhost, &dest_mac, ETH_ALEN);
+	reth->ether_type = ETHERTYPE_ARP;
+
+	// arp header
+	rarp->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+	rarp->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+	rarp->ea_hdr.ar_hln = 6;
+	rarp->ea_hdr.ar_pln = 4;
+	rarp->ea_hdr.ar_op = htons(ARPOP_REQUEST);
+
+	// arp ethernet
+		// source
+	memcpy(rarp->arp_sha, &iface.mac, ETH_ALEN);
+	memcpy(rarp->arp_spa, &iface.ip, 4);
+		// target
+	memcpy(rarp->arp_tha, dest_mac, ETH_ALEN);
+	memcpy(rarp->arp_tpa, dest_ip, 4);
+
+	// send it
+	nf_pktout_send(pkt, pkt + PKT_SIZE); 
+
+	dest_ip[0] = 192;
+	dest_ip[1] = 168;
+	dest_ip[2] = 0;
+	dest_ip[3] = 2;
+
+	// This is to just send an ARP request to switch
+	// allocate an output buffer
+	pkt = nf_pktout_alloc(PKT_SIZE);
+
+	// setup the ioq_header
+	fill_ioq((struct ioq_header*) pkt, 2, PKT_SIZE);
+
+	// setup the ethernet header
+	reth = (struct ether_header*) (pkt + sizeof(struct ioq_header));
+ 
+	// setup the ethernet arp
+	rarp = (struct ether_arp*) (pkt + sizeof(struct ioq_header) + sizeof(struct ether_header));
+
+	// start putting things into the packet
+	// ethernet
+	memcpy(reth->ether_shost, &iface.mac, ETH_ALEN);
+	memcpy(reth->ether_dhost, &dest_mac, ETH_ALEN);
+	reth->ether_type = ETHERTYPE_ARP;
+
+	// arp header
+	rarp->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+	rarp->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+	rarp->ea_hdr.ar_hln = 6;
+	rarp->ea_hdr.ar_pln = 4;
+	rarp->ea_hdr.ar_op = htons(ARPOP_REQUEST);
+
+	// arp ethernet
+		// source
+	memcpy(rarp->arp_sha, &iface.mac, ETH_ALEN);
+	memcpy(rarp->arp_spa, &iface.ip, 4);
+		// target
+	memcpy(rarp->arp_tha, dest_mac, ETH_ALEN);
+	memcpy(rarp->arp_tpa, dest_ip, 4);
+
+	// send it
+	nf_pktout_send(pkt, pkt + PKT_SIZE); 
 
 	// start in on replying
 	while(1)

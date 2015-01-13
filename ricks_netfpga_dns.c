@@ -279,7 +279,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	// New DNS header pointer
 	dns = pkt_pull(pkt, sizeof(DnsHeader));
 	//DnsHeader *dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
-	memcpy(msg, pkt, ntohs(ioq->byte_length));
+	memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
 	//dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
 
 	//memcpy(msg, pkt->head, pkt-len);
@@ -477,7 +477,7 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 //		return -5;
 //	}
 
-	if (udp->dest == UDP_PT)
+	if (htons(udp->dest) == UDP_PT)
 	{
 		log("Is DNS Query\n");
 		//result = process_dns(iface, ioq, eth, ip, udp, dns, pkt);

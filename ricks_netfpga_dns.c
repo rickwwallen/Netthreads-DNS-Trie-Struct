@@ -375,16 +375,11 @@ nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_head
 
 	// New DNS header pointer
 	dns = pkt_pull(pkt, sizeof(DnsHeader));
-	//DnsHeader *dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
-	memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
-	//dnshdr = pkt_pull(pkt, sizeof(DnsHeader));
-
-	//memcpy(msg, pkt->head, pkt-len);
+	//memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
+	memcpy(msg, dns, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
 	
 	strToHdr(msg, &head);
 	u16IToFlags(&fl, head.flags);
-	//strToHdr(msg, &head);
-	//u16IToFlags(&fl, head.flags);
 
 	//DATETS,ID,QR,OPCODE,QDCOUNT
 	log("%s,%d,%d,%d,%d,", t, (int) head.id, (int) fl.qr, (int) fl.opcode, (int) head.qdcount);

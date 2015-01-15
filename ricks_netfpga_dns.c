@@ -28,6 +28,12 @@
  * *		-Removed send packet and to have the functions send internally
  * *	January.13.2015-Fixed IP Header checksum
  * *		-Create DNS echo, Just echo DNS request for debugging
+ * *	January.14.2015-Created DNS reply packet
+ * *		-Fixed DNS reply packet
+ * *		-Re-enabled UDP checks
+ * *		-Fixed data types of pkt (pkt_buff) for UDP and DNS
+ * *	January.15.2015-Removed function to send DNS reply
+ * *		-
  * */
 /**********************************************************************/
 //#include "structs_netfpga.h"
@@ -137,132 +143,7 @@ u_int16_t ones_complement_sum(char *data, int len)
 	return (u_int16_t) ~sum;
 }
 
-// Send Answer/Response to the DNS Query
-int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, DnsHeader *dns, struct pkt_buff *pkt)
-{
-	t_addr *reply;
-	//struct ioq_header *rioq;
-	unsigned short reply_bytes;
-	struct ether_header *reth;
-	struct iphdr *rip;
-	struct udphdr *rudp;
-	DnsHeader *rdns;
-	u_int32_t acc;
-	int byte_size;
-
-	byte_size = ntohs(ioq->byte_length);
-
-	// Create and send a reply.
-	//if (pkt_alloc(&reply,
-	//	sizeof(struct ioq_header) +
-	//	sizeof(struct ether_header) +
-	//	sizeof(struct iphdr) +
-	//	sizeof(struct udphdr) +
-	//	sizeof(DnsHeader) +
-	//	pkt->len) == 0)
-	//{
-	//  return -15;
-	//}
-
-	// allocate reply size
-	// ***TODO***
-	reply = nf_pktout_alloc(byte_size);
-
-	//rioq		= pkt_pull(&reply, sizeof(struct ioq_header));
-	//reply_bytes	= (unsigned short) reply.len;
-	//reth		= pkt_pull(&reply, sizeof(struct ether_header));
-	//rip		= pkt_pull(&reply, sizeof(struct iphdr));
-	//rudp		= pkt_pull(&reply, sizeof(struct udphdr));
-	//rdns		= pkt_pull(&reply, sizeof(DnsHeader));
-	//fill_ioq(rioq, ioq->src_port, reply_bytes);
-	// setup the ioq_header
-	// ***TODO***
-	fill_ioq((struct ioq_header*) reply, 2, byte_size);
-	
-	// setup the ethernet header
-	reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-
-	// setup the ip header
-	rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-
-	// setup the udp header
-	rudp = (struct icmp*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
-
-	// setup the dns header
-	rdns = (struct icmp*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(DnsHeader));
-
-	// fill ethernet header
-	memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
-	memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
-	reth->ether_type = htons(ETHERTYPE_IP);
-
-	// fill ip header
-#ifndef DEBUG
-	rip->version_ihl = 0x45;
-	//rip->ihl = 5;
-#else
-	rip->version = 4;
-	rip->ihl = 5;
-#endif
-	rip->tos = ip->tos; // not sure about this one
-	// ***TODO***
-	//rip->tot_len = htons(20 + pkt->len);
-	rip->tot_len = htons(sizeof(struct iphdr) + (byte_size - (sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr))));
-	rip->id = ip->id; // Lets use the id given
-	rip->frag_off = 0;
-	rip->ttl = IPDEFTTL;
-	//rip->ttl = 64;
-	rip->protocol = IPPROTO_UDP;
-#ifndef DEBUG
-	rip->saddr_h = ip->daddr_h;
-	rip->saddr_l = ip->daddr_l;
-	rip->daddr_h = ip->saddr_h;
-	rip->daddr_l = ip->saddr_l;
-#else
-	//rip->saddr = ip->daddr;
-	rip->saddr = iface->ip;
-	rip->daddr = ip->saddr;
-#endif
-	//rip->check = ones_complement_sum((char *)rip, 20);
-	rip->check = ntohs(0);
-	acc = ones_complement_sum(rip, ntohs(rip->tot_len));
-	rip->check = htons(acc);
-	acc = 0;
-
-	// fill udp, base it on udp request
-	//memcpy(rudp, udp, pkt->len);
-	rudp->source = udp->dest;
-	rudp->dest   = udp->source;
-	// ***TODO***
-	//rudp->len    = htons(1000 + sizeof(struct udphdr));
-	//rudp->len    = htons(ntohs(rip->tot_len) + sizeof(struct udphdr));
-	rudp->len    = htons(ntohs(rip->tot_len) - sizeof(struct iphdr));
-
-	// init checksum to zero to calcualate
-	rudp->check = ntohs(0);
-
-	// calculate checksum
-	// ***TODO update total lenght***
-	acc = ones_complement_sum(rudp, (ntohs(rip->tot_len) - sizeof(struct iphdr)));
-
-	// assign checksum
-	rudp->check = htons(acc);
-
-	// fill dns
-	// ***TODO ***
-	//memcpy(rdns, dns, (byte_size - (sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct udphdr))));
-	//memcpy(rdns, dns, (ntohs(rip->tot_len) + sizeof(struct udphdr)));
-	memcpy(rdns, dns, ntohs(rudp->len));
-
-	// send it
-	// ***TODO***
-	nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
-
-	return 1;
-}
-
 // Process DNS Query
-//int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, t_addr *pkt)
 int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, struct pkt_buff *pkt)
 {
 	DnsHeader *dns;			// DNS header pointer
@@ -376,8 +257,8 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 
 	// New DNS header pointer
 	dns = pkt_pull(pkt, sizeof(DnsHeader));
-	//memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
 	memcpy(msg, dns, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
+	//memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
 	
 	strToHdr(msg, &head);
 	u16IToFlags(&fl, head.flags);
@@ -464,19 +345,14 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		/* Make Reply and Send awww PACKET */
 		// allocate reply size
 		reply = nf_pktout_alloc(ntohs(ioq->byte_length));
-
 		// setup the ioq_header
 		fill_ioq((struct ioq_header*) reply, 2, ntohs(ioq->byte_length));
-		
 		// setup the ethernet header
 		reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-
 		// setup the IP header
 		rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-
 		// setup the UDP header	
 		rudp = (struct icmp*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
-
 		//setup the DNS header
 		rdns = (DnsHeader *) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct udphdr));
 
@@ -485,7 +361,6 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
 		memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
 		reth->ether_type = ETHERTYPE_IP;
-
 		// ip
 		rip->version_ihl = 0x45;
 		rip->tos = ip->tos; // not sure about this one
@@ -503,14 +378,11 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		rip->check = htons(0);
 		acc = ones_complement_sum(rip, sizeof(struct iphdr));
 		rip->check = htons(acc);
-
 		acc=0;
-
 		// udp
 		rudp->source = udp->dest;
 		rudp->dest = udp->source;
 		rudp->len    = htons(ntohs(rip->tot_len) - sizeof(struct iphdr));
-
 		// dns
 		memcpy(rdns, msg, sizeof(DnsHeader) + offset); // Push the internal buffer msg to pkt
 		// init checksum to zero to calcualate
@@ -625,14 +497,17 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	u_int32_t acc;
 	acc = 0;
 
-	size = sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr);
+	size = htons(ioq->byte_length) + sizeof(struct ether_header) + sizeof(struct iphdr);
+
 	// New UDP header pointer
 	udp = pkt_pull(pkt, sizeof(struct udphdr));
 
 	// Most checks rely on pkt_buff structure and must be commented
 	log("Process UDP of size %u\n", pkt->len);
+
 	// check min size
-	if (ntohs(udp->len) < (u_int16_t) 8)
+	//if(ntohs(udp->len) < (u_int16_t) 8)
+	if(ntohs(udp->len) < (u_int16_t) size)
 	{
 		return -4;
 	}
@@ -650,36 +525,33 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	acc = acc + udp->len;
 	acc = acc + my_ones_complement_sum(pkt->head , ntohs(udp->len));
 	acc = my_fold(acc);
-	// put checksum in
 	check = htons(~acc);
-	if (check != udp->check)
+	if(check != udp->check)
 	{
 		log("Checksum failed %x\n", check);
 		return -5;
 	}
 
-	if (htons(udp->dest) == UDP_PT)
+	// if not DNS reject
+	switch(htons(udp->dest))
 	{
-	      log("Is DNS Query\n");
-	      result = process_dns(iface, ioq, eth, ip, udp, pkt);
-	}
-	else
-	{
-		result = 1;
+		case UDP_PT:
+			log("Is DNS Query\n");
+			result = process_dns(iface, ioq, eth, ip, udp, pkt);
+			break;
+		default:
+			result = 1;
+			break;
 	}
 	//// Uncomment for testing 
 	//// allocate reply size
 	//reply = nf_pktout_alloc(ntohs(ioq->byte_length));
-
 	//// setup the ioq_header
 	//fill_ioq((struct ioq_header*) reply, 2, ntohs(ioq->byte_length));
-	//
 	//// setup the ethernet header
 	//reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-
 	//// setup the IP header
 	//rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-
 	//// setup the UDP header	
 	//rudp = (struct icmp*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
 
@@ -688,7 +560,6 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	//memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
 	//memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
 	//reth->ether_type = ETHERTYPE_IP;
-
 	//// ip
 	//rip->version_ihl = 0x45;
 	//rip->tos = ip->tos; // not sure about this one
@@ -706,9 +577,7 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	//rip->check = htons(0);
 	//acc = ones_complement_sum(rip, sizeof(struct iphdr));
 	//rip->check = htons(acc);
-
 	//acc=0;
-
 	//// udp
 	//memcpy(rudp, udp, htons(ioq->byte_length) ); // Push the internal buffer msg to pkt
 	//memcpy(rudp->source, udp->dest, sizeof(u_int16_t));
@@ -727,8 +596,8 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	//acc = my_fold(acc);
 	//// put checksum in
 	//rudp->check = htons(~acc);
-
 	//// send it
+
 	//nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
 	
 	return result;
@@ -745,6 +614,7 @@ int process_icmp(struct net_iface *iface, struct ioq_header *ioq, struct ether_h
 
 	// New ICMP header pointer
 	icmp = pkt_pull(pkt, sizeof(struct icmphdr));
+
 	// allocate reply size
 	reply = nf_pktout_alloc(ICMP_PKT_SIZE);
 	// setup the ioq_header
@@ -796,32 +666,36 @@ int process_icmp(struct net_iface *iface, struct ioq_header *ioq, struct ether_h
 int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct pkt_buff *pkt)
 {
 	int result;
+	struct iphdr *ip;
+	u_int32_t acc;
+	u_int16_t check;
+	u_int16_t temp;
+	int size;
 	int ihl;
 	int options_size;
-	u_int16_t check;
-	struct iphdr *ip;
 	void *options;
+
+	acc = 0;
 
 	// New IP header pointer
 	ip = pkt_pull(pkt, sizeof(struct iphdr));
 
 	//Comment IP check, most use the pk_buff checks that couldn't get passed.
-//	log("Process ip\n");
-//	ip = pkt_pull(pkt, sizeof(struct iphdr));
-//	if (!ip)
-//	{
-//		return -7;
-//	}
-//
+	log("Process ip\n");
+	if(!ip)
+	{
+		return -7;
+	}
+
 //#ifndef DEBUG
 //	ihl = ip->version_ihl&0xf;
-//	if ((ip->version_ihl&0xf0) != 0x40 || ihl < 5)
+//	if((ip->version_ihl&0xf0) != 0x40 || ihl < 5)
 //	{
 //		return -8;
 //	}
 //#else
 //	ihl = ip->ihl;
-//	if (ip->version != 4 || ihl < 5)
+//	if(ip->version != 4 || ihl < 5)
 //	{
 //		return -8;
 //	}
@@ -831,28 +705,33 @@ int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_hea
 //	//void *options = pkt_pull(pkt, options_size);
 //	options_size = ihl * 4 - sizeof(struct iphdr);
 //	options = pkt_pull(pkt, options_size);
-//	if (!options)
+//	if(!options)
 //	{
 //		log("Options truncated. size=%d\n", options_size);
 //		return -9;
 //	}
-//
+
 //	// verify checksum
-//	//u_int16_t check = ones_complement_sum((char *)ip, ihl * 4);
-//	check = ones_complement_sum((char *)ip, ihl * 4);
-//	if (check != 0xFFFF)
+//	temp = ip->check;
+//	ip->check = temp;
+//	acc = ones_complement_sum((char *)ip, sizeof(struct iphdr));
+//	check = htons(~acc);
+//	ip->check = temp;
+//	if(check != ip->check)
 //	{
 //		log("Checksum failed %x\n", check);
 //		return -10;
 //	}
 //
-//	if (ntohs(ip->tot_len) != ihl * 4 + pkt->len)
+//	// verify size
+//	size = htons(ioq->byte_length) - sizeof(struct ether_header);
+//	if(ntohs(ip->tot_len) != size)
 //	{
 //		log("Packet data truncated %d instead of %d\n", ntohs(ip->tot_len), ihl * 4 + pkt->len);
 //		return -11;
 //	}
 	
-	switch (ntohs(ip->protocol))
+	switch(ntohs(ip->protocol))
 	{
 		case IPPROTO_ICMP:
 			result = process_icmp(iface, ioq, eth, ip, pkt);
@@ -957,7 +836,7 @@ int process_eth(struct net_iface *iface, t_addr *pkt)
 
 	eth = pkt_pull(&my_pkt, sizeof(struct ether_header));
 
-	switch (ntohs(eth->ether_type))
+	switch(ntohs(eth->ether_type))
 	{
 		case ETHERTYPE_ARP:
 			result = process_arp(iface, ioq, eth, &my_pkt);

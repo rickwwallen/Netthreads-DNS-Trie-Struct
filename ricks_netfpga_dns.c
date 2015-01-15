@@ -262,7 +262,8 @@ int send_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_heade
 }
 
 // Process DNS Query
-int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, t_addr *pkt)
+//int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, t_addr *pkt)
+int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, struct pkt_buff *pkt)
 {
 	DnsHeader *dns;			// DNS header pointer
 	DnsHeader head;			// Hold header information
@@ -405,6 +406,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		// set authority
 		fl.aa = 1;
 
+		offset = sizeof(DnsHeader);
 		for(i = 0; i < qdc; i++)
 		{
 			strToQry(msg+offset, &qry[i], dmn[i], &offset);
@@ -610,17 +612,16 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	return -10;
 }
 
-int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, t_addr *pkt)
+int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct pkt_buff *pkt)
 {
 	struct udphdr *udp;
 	int result;
 	u_int16_t check;
-	u_int16_t temp;
 	int size;
-	t_addr *reply;
-	struct ether_header *reth;
-	struct iphdr *rip;
-	struct udphdr *rudp;
+	//t_addr *reply;
+	//struct ether_header *reth;
+	//struct iphdr *rip;
+	//struct udphdr *rudp;
 	u_int32_t acc;
 	acc = 0;
 
@@ -636,84 +637,26 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		return -4;
 	}
 
-//	// verify checksum
-//	temp = udp->check;
-//	udp->check = htons(0);
-//	// calculate checksum
-//	acc = ip->saddr_l;
-//	acc = acc + ip->saddr_h;
-//	acc = acc + ip->daddr_l;
-//	acc = acc + ip->daddr_h;
-//	acc = acc + ip->protocol;
-//	acc = acc + udp->len;
-//	//acc = acc + udp->source;
-//	//acc = acc + udp->dest;
-//	//acc = acc + udp->len;
-//	acc = acc + my_ones_complement_sum(udp, ntohs(udp->len));
-//	acc = my_fold(acc);
-//	// put checksum in
-//	check = htons(~acc);
-//	udp->check = temp;
-//// allocate reply size
-//reply = nf_pktout_alloc(ntohs(ioq->byte_length));
-//
-//// setup the ioq_header
-//fill_ioq((struct ioq_header*) reply, 2, ntohs(ioq->byte_length));
-//
-//// setup the ethernet header
-//reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-//
-//// setup the IP header
-//rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-//
-//// setup the UDP header	
-//rudp = (struct icmp*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
-//
-//// start putting things into the packet
-//// ethernet
-//memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
-//memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
-//reth->ether_type = ETHERTYPE_IP;
-//
-//// ip
-//rip->version_ihl = 0x45;
-//rip->tos = ip->tos; // not sure about this one
-//rip->tot_len = htons(ntohs(ioq->byte_length) - sizeof(struct ether_header));
-//rip->id = ip->id + 12; // not sure about this one
-////rip->id = 1988; // not sure about this one
-//rip->frag_off = ip->frag_off;
-//rip->ttl = ip->ttl--;
-//rip->protocol = IPPROTO_UDP;
-//rip->saddr_h = ip->daddr_h;
-//rip->saddr_l = ip->daddr_l;
-//rip->daddr_h = ip->saddr_h;
-//rip->daddr_l = ip->saddr_l;
-////rip->check = ones_complement_sum(rip, ntohs(ip->tot_len));
-//rip->check = htons(0);
-//acc = ones_complement_sum(rip, sizeof(struct iphdr));
-//rip->check = htons(acc);
-//
-//acc=0;
-//
-//// udp
-//memcpy(rudp, udp, htons(ioq->byte_length) ); // Push the internal buffer msg to pkt
-//memcpy(rudp->source, udp->dest, sizeof(u_int16_t));
-//memcpy(rudp->dest, udp->source, sizeof(u_int16_t));
-//rudp->len    = htons(ntohs(rip->tot_len) - sizeof(struct iphdr));
-//// init checksum to zero to calcualate
-////rudp->check = htons(0);
-//// calculate checksum
-//// put checksum in
-//rudp->check = check;
-////rudp->check = udp->check;
-//
-//// send it
-//nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
-//	if (check != udp->check)
-//	{
-//		log("Checksum failed %x\n", check);
-//		return -5;
-//	}
+	// verify checksum
+	// calculate checksum
+	acc = ip->saddr_l;
+	acc = acc + ip->saddr_h;
+	acc = acc + ip->daddr_l;
+	acc = acc + ip->daddr_h;
+	acc = acc + ip->protocol;
+	acc = acc + udp->len;
+	acc = acc + udp->source;
+	acc = acc + udp->dest;
+	acc = acc + udp->len;
+	acc = acc + my_ones_complement_sum(pkt->head , ntohs(udp->len));
+	acc = my_fold(acc);
+	// put checksum in
+	check = htons(~acc);
+	if (check != udp->check)
+	{
+		log("Checksum failed %x\n", check);
+		return -5;
+	}
 
 	if (htons(udp->dest) == UDP_PT)
 	{

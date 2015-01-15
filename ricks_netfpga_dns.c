@@ -522,8 +522,8 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		acc = acc + rip->daddr_h;
 		acc = acc + rip->protocol;
 		acc = acc + rudp->len;
-		acc = acc + my_ones_complement_sum(rudp, (ntohs(rip->tot_len) - sizeof(struct iphdr)));
-		//acc = acc + my_ones_complement_sum(rudp, ntohs(rudp->len));
+		//acc = acc + my_ones_complement_sum(rudp, (ntohs(rip->tot_len) - sizeof(struct iphdr)));
+		acc = acc + my_ones_complement_sum(rudp, ntohs(rudp->len));
 		acc = my_fold(acc);
 		// put checksum in
 		rudp->check = htons(~acc);

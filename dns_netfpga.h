@@ -50,10 +50,20 @@
 #include "triez_netfpga.h"
 
 //Added from ricks_netfpga.c
+#include "triez_netfpga.c"
+#include "shared_functions_netfpga.c"
 #include "common.h"
 #include "pktbuff.h"
 #include "dev.h"
 #include "support.h"
+
+/* NETFPGA SPECIFIC DECLARATIONS */
+#define ETH_HDR_SZ 14
+#define IPV4_HDR_SZ 20
+#define UDP_HDR_SZ 8
+#define DNS_HDR_SZ 12
+//#define TYP_
+#endif //end dns_netfpga.h
 
 /* DECLARATIONS */
 #define QRY_NO 1
@@ -70,11 +80,3 @@
 #define MAXFD 64
 #define THD_MX 8
 //#define UDP_SZ 4096	//bit size of UDP Packet 500 bytes * 8
-
-/* NETFPGA SPECIFIC DECLARATIONS */
-#define ETH_HDR_SZ 14
-#define IPV4_HDR_SZ 20
-#define UDP_HDR_SZ 8
-#define DNS_HDR_SZ 12
-//#define TYP_
-#endif //end dns_netfpga.h

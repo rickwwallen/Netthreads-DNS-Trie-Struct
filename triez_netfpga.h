@@ -3,7 +3,7 @@
  * * HEADER FILE FOR triez_netfpga.c
  * * CREATED BY:	RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	SEPTEMBER.29.2014
+ * * DATE LAST MOD:	JANUARY.21.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -20,6 +20,7 @@
  * * MODIFIED LOG:
  * *       <date>-<description>
  * *	September.29.2014-Adapted from triez.h
+ * *	January.21.2015-Commented out readZone function prototype
  * */
 /**********************************************************************/
 #ifndef _TRIEZ_NETFPGA_
@@ -59,7 +60,7 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 void uDN(char *dom);
 
 /* F(X) TO TAKE IN STRING OF ZONE FILE NAME AND CREATE DB */
-Trie *readZone(char *f );
+//Trie *readZone(char *f );
 
 /* F(X) TO REVERSE DOMAIN NAME */
 int revDN(char *DN);

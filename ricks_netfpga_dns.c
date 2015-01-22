@@ -3,7 +3,7 @@
  * * DNS SERVER THE UTILIZES TRIE STRUCTURE AS THE LOOKUP DATABASE
  * * CREATED BY:	RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	JANUARY.15.2015
+ * * DATE LAST MOD:	JANUARY.21.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -37,23 +37,25 @@
  * *		-Commented out checksum checks for IP and UDP
  * *		-Took out some debugging packet sends that were commented out
  * *		-Took out packet sent to switch
+ * *	January.21.2015-Commented out includes since they are included in dns_netpga.h
+ * *		-
  * */
 /**********************************************************************/
 //#include "structs_netfpga.h"
 #include "dns_netfpga.h"
 //#include "my_inet.c"
-#include "triez_netfpga.c"
-#include "shared_functions_netfpga.c"
+//#include "triez_netfpga.c"
+//#include "shared_functions_netfpga.c"
 
-#include "common.h"
-#include "pktbuff.h"
-#include "dev.h"
-#include "support.h"
+//#include "common.h"
+//#include "pktbuff.h"
+//#include "dev.h"
+//#include "support.h"
 
 //#include <netinet/udp.h>
-#include <stdio.h>
-#include <arpa/inet.h>
-#include <support.h>
+//#include <stdio.h>
+//#include <arpa/inet.h>
+//#include <support.h>
 
 #define ARP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct ether_arp))
 #define ICMP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct icmphdr) + 512)

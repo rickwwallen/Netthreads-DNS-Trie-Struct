@@ -3,7 +3,7 @@
  * * STANDARD HEADER FILE
  * * CREATED BY:	RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	SEPTEMBER.29.2014
+ * * DATE LAST MOD:	JANUARY.21.2015
  * *     ___________
  * *    |           | 
  * *  [[|___________|]] 
@@ -20,6 +20,7 @@
  * * MODIFIED LOG:
  * *       <date>-<description>
  * *	September.29.2014-Adapted from dns_1.h
+ * *	January.21.2015-Added includes from ricks_netfpga.c
  * */
 /**********************************************************************/
 //Network and Structures
@@ -47,6 +48,13 @@
 #include "structs_netfpga.h"
 #include "shared_functions_netfpga.h"
 #include "triez_netfpga.h"
+
+//Added from ricks_netfpga.c
+#include "common.h"
+#include "pktbuff.h"
+#include "dev.h"
+#include "support.h"
+
 /* DECLARATIONS */
 #define QRY_NO 1
 #define DNM_SZ 255

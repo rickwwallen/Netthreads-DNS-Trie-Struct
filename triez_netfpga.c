@@ -22,6 +22,7 @@
  * *       <date>-<description>
  * *	September.29.2014-Adapted from triez.c
  * *	January.21.2015-Commented out readZone since file io isn't allowed and needs to occur from the host
+ * *	January.25.2015-Changed allocation to use the netthreads version
  * */
 /**********************************************************************/
 #include "triez_netfpga.h"
@@ -75,7 +76,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 	uint16_t type;
 
 	RR	*resrec;
-	resrec = (RR *) malloc(sizeof(RR));
+	resrec = (RR *) sp_malloc(sizeof(RR));
 
 	resrec->ars	= NULL;
 	resrec->nsrs	= NULL;
@@ -99,14 +100,14 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			seg++;
 	}
 	// Allocate 2d array
-	char **buff = (char**) malloc(seg * sizeof (char*));
+	char **buff = (char**) sp_malloc(seg * sizeof (char*));
 	// Variable for the current segment
-	char *buff2 = (char *) malloc(LNE_SZ *sizeof(char));
+	char *buff2 = (char *) sp_malloc(LNE_SZ *sizeof(char));
 	buff2 = strtok(rec, ",");
 
 	for(i = 0; buff2 != NULL; i++)
 	{
-		buff[i] = malloc(strlen(buff2)*sizeof(char));
+		buff[i] = sp_malloc(strlen(buff2)*sizeof(char));
 		//buff[i] = strdup(buff2);
 		memcpy(buff[i], buff2, strlen(buff2));
 		buff2 = strtok(NULL, ",");
@@ -180,7 +181,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 	switch((DnsType) type)
 	{
 		case a:
-			resrec->ars =		(A *) malloc(sizeof(A));
+			resrec->ars =		(A *) sp_malloc(sizeof(A));
 			if(inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
 			//if(my_inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
 			else
@@ -194,7 +195,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->ars->anxt =		NULL;
 			break;
 		case ns:
-			resrec->nsrs =		(NS *) malloc(sizeof(NS));
+			resrec->nsrs =		(NS *) sp_malloc(sizeof(NS));
 			//resrec->nsrs->nsdname =		strdup(buff[c]);
 			memcpy(resrec->nsrs->nsdname, buff[c], strlen(buff[c]));
 			resrec->nsrs->rclass =		class;
@@ -203,7 +204,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->nsrs->nsnxt =		NULL;
 			break;
 		case cname:
-			resrec->cnamers =		(CNAME *) malloc(sizeof(CNAME));
+			resrec->cnamers =		(CNAME *) sp_malloc(sizeof(CNAME));
 			//resrec->cnamers->cname =	strdup(buff[c]);
 			memcpy(resrec->cnamers->cname, buff[c], strlen(buff[c]));
 			resrec->cnamers->rclass =	class;
@@ -211,7 +212,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->cnamers->rdlen = 	strlen(resrec->cnamers->cname) + 1;
 			break;
 		case soa:
-			resrec->soars =			(SOA *) malloc(sizeof(SOA));
+			resrec->soars =			(SOA *) sp_malloc(sizeof(SOA));
 			//resrec->soars->mname =		strdup(buff[c]);
 			//resrec->soars->rname =		strdup(buff[c+1]);
 			memcpy(resrec->soars->mname, buff[c], strlen(buff[c]));
@@ -232,7 +233,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			(*rclass) = class;
 			break;
 		case ptr:
-			resrec->ptrrs =			(PTR *) malloc(sizeof(PTR));
+			resrec->ptrrs =			(PTR *) sp_malloc(sizeof(PTR));
 			//resrec->ptrrs->ptrdname =	strdup(buff[c]);
 			memcpy(resrec->ptrrs->ptrdname, buff[c], strlen(buff[c]));
 			resrec->ptrrs->rclass =		class;
@@ -240,7 +241,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->ptrrs->rdlen = 		strlen(resrec->ptrrs->ptrdname) + 1;
 			break;
 		case mx:
-			resrec->mxrs =			(MX *) malloc(sizeof(MX));
+			resrec->mxrs =			(MX *) sp_malloc(sizeof(MX));
 			resrec->mxrs->preference =	(uint16_t) atoi(buff[c]);
 			//resrec->mxrs->exchange =	strdup(buff[c+1]);
 			memcpy(resrec->mxrs->exchange, buff[c+1], strlen(buff[c+1]));
@@ -251,7 +252,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->mxrs->mxnxt =		NULL;
 			break;
 		case aaaa:
-			resrec->aaaars =		(AAAA *) malloc(sizeof(AAAA));
+			resrec->aaaars =		(AAAA *) sp_malloc(sizeof(AAAA));
 			if(inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
 			//if(my_inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
 			else
@@ -276,7 +277,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 Trie *createNode(char k, RR *v)
 {
 	Trie *node;
-	node = (Trie *) malloc(sizeof(Trie));
+	node = (Trie *) sp_malloc(sizeof(Trie));
 
 	RR      *resrec;
 
@@ -289,7 +290,7 @@ Trie *createNode(char k, RR *v)
 		node->val = v;
 	else
 	{
-		resrec = (RR *) malloc(sizeof(RR));
+		resrec = (RR *) sp_malloc(sizeof(RR));
 
 		resrec->ars     = NULL;
 		resrec->nsrs    = NULL;
@@ -356,7 +357,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 						aptr = plc->val->ars;
 						if(aptr == NULL)
 						{
-							plc->val->ars = (A *) malloc(sizeof(A));
+							plc->val->ars = (A *) sp_malloc(sizeof(A));
 							plc->val->ars = resrec->ars;
 						}
 						else
@@ -371,7 +372,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 						nsptr = plc->val->nsrs;
 						if(nsptr == NULL)
 						{
-							plc->val->nsrs = (NS *) malloc(sizeof(NS));
+							plc->val->nsrs = (NS *) sp_malloc(sizeof(NS));
 							plc->val->nsrs = resrec->nsrs;
 						}
 						else
@@ -385,7 +386,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 					{
 						if(plc->val->cnamers == NULL)
 						{
-							plc->val->cnamers = (CNAME *) malloc(sizeof(CNAME) + resrec->cnamers->rdlen);
+							plc->val->cnamers = (CNAME *) sp_malloc(sizeof(CNAME) + resrec->cnamers->rdlen);
 							plc->val->cnamers = resrec->cnamers;
 						}
 					}
@@ -393,7 +394,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 					{
 						if(plc->val->ptrrs == NULL)
 						{
-							plc->val->ptrrs = (PTR *) malloc(sizeof(PTR) + resrec->ptrrs->rdlen);
+							plc->val->ptrrs = (PTR *) sp_malloc(sizeof(PTR) + resrec->ptrrs->rdlen);
 							plc->val->ptrrs = resrec->ptrrs;
 						}
 					}
@@ -402,7 +403,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 						mxptr = plc->val->mxrs;
 						if(mxptr == NULL)
 						{
-							plc->val->mxrs = (MX *) malloc(sizeof(MX) + resrec->mxrs->rdlen);
+							plc->val->mxrs = (MX *) sp_malloc(sizeof(MX) + resrec->mxrs->rdlen);
 							plc->val->mxrs = resrec->mxrs;
 						}
 						else
@@ -417,7 +418,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 						aaaaptr = plc->val->aaaars;
 						if(aaaaptr == NULL)
 						{
-							plc->val->aaaars = (AAAA *) malloc(sizeof(AAAA));
+							plc->val->aaaars = (AAAA *) sp_malloc(sizeof(AAAA));
 							plc->val->aaaars = resrec->aaaars;
 						}
 						else
@@ -729,12 +730,12 @@ void findN(char *dest, Trie *start)
 				seg++;
 		}
 
-		char **label = (char**) malloc(seg * sizeof (char*));
+		char **label = (char**) sp_malloc(seg * sizeof (char*));
 		char *curLabel = strtok(buff2, ".");
 
 		for(i = 0; curLabel != NULL; i++)
 		{
-			label[i] = malloc(strlen(curLabel)*sizeof(char));
+			label[i] = sp_malloc(strlen(curLabel)*sizeof(char));
 			//label[i] = strdup(curLabel);
 			memcpy(label[i], curLabel, strlen(curLabel));
 			curLabel = strtok(NULL, ".");
@@ -751,8 +752,8 @@ void findN(char *dest, Trie *start)
 
 		// Deallocate 2d array
 		for(i = 0; i < seg; i++)
-			free(label[i]);
-		free(label);
+			sp_free(label[i]);
+		sp_free(label);
 	}
 		strcpy(dest, buff);
 
@@ -1820,7 +1821,7 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 void uDN(char *dom)
 {
 	int i;
-	char *u = (char *) malloc(sizeof(char) * strlen(dom) + 1);
+	char *u = (char *) sp_malloc(sizeof(char) * strlen(dom) + 1);
 
 	for(i = 0; i <= strlen(dom); i++)
 		u[i] = mytoupper(dom[i]);
@@ -1983,13 +1984,13 @@ int revDN(char *DN)
 			seg++;
 	}
 	// Allocate 2d array
-	char **label = (char**) malloc(seg * sizeof (char*));
+	char **label = (char**) sp_malloc(seg * sizeof (char*));
 	// Variable for the current label
 	char *curLabel = strtok(DN, ".");
 
 	for(i = 0; curLabel != NULL; i++)
 	{
-		label[i] = malloc(strlen(curLabel)*sizeof(char));
+		label[i] = sp_malloc(strlen(curLabel)*sizeof(char));
 		//label[i] = strdup(curLabel);
 		memcpy(label[i], curLabel, strlen(curLabel));
 		curLabel = strtok(NULL, ".");
@@ -2006,8 +2007,8 @@ int revDN(char *DN)
 	}
 	// Deallocate 2d array
 	for(i = 0; i < seg; i++)
-		free(label[i]);
-	free(label);
+		sp_free(label[i]);
+	sp_free(label);
 	// Put the reversed domain name back into the variable passed in
 	strcpy(DN, tmp);
 

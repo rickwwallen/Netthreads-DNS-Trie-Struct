@@ -27,6 +27,7 @@
 /**********************************************************************/
 #include "triez_netfpga.h"
 #include "dns_netfpga.h"
+#include "memory.c"
 
 /* F(X) TO CHECK DOMAIN NAME DOESN'T CONTAIN INVALID CHARACTERS */
 uint16_t checkDN(char *domName)

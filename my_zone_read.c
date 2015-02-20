@@ -25,7 +25,6 @@
 /**********************************************************************/
 #include "dns_netfpga.h"
 
-
 /* F(X) TO TAKE IN STRING OF ZONE FILE NAME AND CREATE DB */
 Trie *readZone(char *fn)
 {

@@ -59,6 +59,7 @@
 
 #define ARP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct ether_arp))
 #define ICMP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct icmphdr) + 512)
+#define BASE_MASK 0x4000000
 
 /*
   This is the skeleton of a typical NetThreads application.
@@ -155,8 +156,8 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	DnsHeader head;			// Hold header information
 	DnsHdrFlags fl;			// Hold flag information
 	DnsQuery qry[QRY_NO];		// Holds all the queries' qtype and qclass
-	//Trie *root;			// Holds the start of the trie structure
-	//Trie *result;			// Holds the node that search returns
+	Trie *root;			// Holds the start of the trie structure
+	Trie *result;			// Holds the node that search returns
 	char msg[PKT_SZ];		// Messages sent to and from server
 	char nme[DNM_SZ];		// Name
 	char dmn[DNM_SZ][QRY_NO];	// Holds all the queries' domain names
@@ -172,6 +173,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	DnsHeader *rdns;
 	u_int32_t acc;
 
+	root = (Trie *) BASE_MASK;
 //// allocate reply size
 //reply = nf_pktout_alloc(ntohs(ioq->byte_length));
 //
@@ -318,12 +320,12 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 				{
 					strcpy(nme , dmn[i]);
 					revDN(dmn[i]);
-					//result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
+					result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
 					uDN(nme);
-					//if(result != NULL)
-						//putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
-					//else if(result == NULL)
-						//fl.rcode = 3;
+					if(result != NULL)
+					      putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
+					else if(result == NULL)
+						fl.rcode = 3;
 				}
 			}
 			//etlu = getTime();
@@ -340,12 +342,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		hdrToStr(msg, &head);
 
 		// Push to f(x) to build the DNS Response
-		//rc=send_dns(iface, ioq, eth, ip, udp, dnshdr, pkt, &msg);
-		//memcpy(dns, msg, sizeof(DnsHeader) + offset); // Push the internal buffer msg to pkt
-		//pkt_push(pkt, sizeof(DnsHeader));
-		//pkt->len = offset;
 		ioq->byte_length = htons(ntohs(ioq->byte_length) + (offset - offset2));
-		//rc=send_dns(iface, ioq, eth, ip, udp, dns, pkt);
 
 		/* Make Reply and Send awww PACKET */
 		// allocate reply size

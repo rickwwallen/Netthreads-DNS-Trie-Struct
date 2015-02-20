@@ -78,6 +78,8 @@
 //#define UDP_PT 32000
 #define IPV4STRLEN 16
 #define IPV6STRLEN 46
+#define IPV4BYTESZ 32
+#define IPV6BYTESZ 128
 #define MAXFD 64
 #define THD_MX 8
 //#define UDP_SZ 4096	//bit size of UDP Packet 500 bytes * 8

@@ -3,7 +3,7 @@
  * * STRUCTURES FOR THE DNS SERVER
  * * CREATED BY:	RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	SEPTEMBER.29.2014
+ * * DATE LAST MOD:	JANUARY.28.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -20,6 +20,7 @@
  * * MODIFIED LOG:
  * *       <date>-<description>
  * *	September.29.2014-Adapted from structs.h
+ * *	January.28.2015-Altered structs containing IPv4 and IPv6 (in_addr and in6_addr)
  * */
 /**********************************************************************/
 #ifndef _STRUCTS_NETFPGA_
@@ -96,7 +97,8 @@ typedef struct rr
 
 typedef struct arec
 {
-	struct in_addr	address;
+	//struct in_addr	address;
+	unsigned char address[4];
 
 	uint16_t	rclass;
 	int32_t		ttl;
@@ -159,7 +161,8 @@ typedef struct mxrec
 
 typedef struct aaaarec
 {
-	struct in6_addr	address;
+	//struct in6_addr	address;
+	unsigned char address[16];
 
 	uint16_t	rclass;
 	int32_t		ttl;

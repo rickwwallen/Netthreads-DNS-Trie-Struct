@@ -87,6 +87,8 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 	resrec->aaaars	= NULL;
 	resrec->soars	= NULL;
 
+	// default TTL to 1 day will be overwritten by default value anyways
+	ttl = 86400;
 	i = 0;
 	seg = 0;
 	class = 0;
@@ -190,7 +192,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			//resrec->ars->address =		strdup(buff[c]);
 			resrec->ars->rclass =		class;
 			resrec->ars->ttl =		ttl;
-			resrec->ars->rdlen = 		sizeof(struct in_addr);
+			resrec->ars->rdlen = 		sizeof(IPV4BYTESZ);
 			//resrec->ars->rdlen = 		strlen(resrec->ars->address) +
 			//				1;
 			resrec->ars->anxt =		NULL;
@@ -261,7 +263,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			//resrec->aaaars->address =	strdup(buff[c]);
 			resrec->aaaars->rclass =	class;
 			resrec->aaaars->ttl =		ttl;
-			resrec->aaaars->rdlen = 	sizeof(struct in6_addr);
+			resrec->aaaars->rdlen = 	sizeof(IPV6BYTESZ);
 			//resrec->aaaars->rdlen = 	strlen(resrec->aaaars->address) +
 			//				1;
 			resrec->aaaars->aaaanxt = NULL;
@@ -921,8 +923,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-							offset = offset + sizeof(struct in_addr);
+							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+							offset = offset + sizeof(IPV4BYTESZ);
 						}
 						aptr = aptr->anxt;
 					}
@@ -957,8 +959,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-							offset = offset + sizeof(struct in6_addr);
+							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+							offset = offset + sizeof(IPV6BYTESZ);
 						}
 						aaaaptr = aaaaptr->aaaanxt;
 					}
@@ -999,8 +1001,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-							offset = offset + sizeof(struct in_addr);
+							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+							offset = offset + sizeof(IPV4BYTESZ);
 						}
 						aptr = aptr->anxt;
 					}
@@ -1163,8 +1165,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-							offset = offset + sizeof(struct in6_addr);
+							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+							offset = offset + sizeof(IPV6BYTESZ);
 						}
 						aaaaptr = aaaaptr->aaaanxt;
 					}
@@ -1251,8 +1253,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 								offset = offset + sizeof(int32_t);
 								memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 								offset = offset + sizeof(uint16_t);
-								memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-								offset = offset + sizeof(struct in_addr);
+								memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+								offset = offset + sizeof(IPV4BYTESZ);
 							}
 							aptr = aptr->anxt;
 						}
@@ -1287,8 +1289,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 								offset = offset + sizeof(int32_t);
 								memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 								offset = offset + sizeof(uint16_t);
-								memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-								offset = offset + sizeof(struct in6_addr);
+								memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+								offset = offset + sizeof(IPV6BYTESZ);
 							}
 							aaaaptr = aaaaptr->aaaanxt;
 						}
@@ -1375,8 +1377,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 						offset = offset + sizeof(int32_t);
 						memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 						offset = offset + sizeof(uint16_t);
-						memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-						offset = offset + sizeof(struct in_addr);
+						memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+						offset = offset + sizeof(IPV4BYTESZ);
 					}
 					aptr = aptr->anxt;
 				}
@@ -1411,8 +1413,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 						offset = offset + sizeof(int32_t);
 						memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 						offset = offset + sizeof(uint16_t);
-						memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-						offset = offset + sizeof(struct in6_addr);
+						memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+						offset = offset + sizeof(IPV6BYTESZ);
 					}
 					aaaaptr = aaaaptr->aaaanxt;
 				}
@@ -1453,8 +1455,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 						offset = offset + sizeof(uint32_t);
 						memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 						offset = offset + sizeof(uint16_t);
-						memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-						offset = offset + sizeof(struct in_addr);
+						memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+						offset = offset + sizeof(IPV4BYTESZ);
 					}
 					aptr = aptr->anxt;
 				}
@@ -1679,8 +1681,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 						offset = offset + sizeof(int32_t);
 						memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 						offset = offset + sizeof(uint16_t);
-						memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-						offset = offset + sizeof(struct in6_addr);
+						memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+						offset = offset + sizeof(IPV6BYTESZ);
 					}
 					aaaaptr = aaaaptr->aaaanxt;
 				}
@@ -1767,8 +1769,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(struct in_addr));
-							offset = offset + sizeof(struct in_addr);
+							memcpy((void *) msg + offset, (void *) &aptr->address,  sizeof(IPV4BYTESZ));
+							offset = offset + sizeof(IPV4BYTESZ);
 						}
 						aptr = aptr->anxt;
 					}
@@ -1803,8 +1805,8 @@ void putResRecStr(DnsHdrFlags *fl, DnsHeader *head, Trie *root, Trie *result, Dn
 							offset = offset + sizeof(int32_t);
 							memcpy((void *) msg + offset, (void *) &rdlen, sizeof(uint16_t));
 							offset = offset + sizeof(uint16_t);
-							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(struct in6_addr));
-							offset = offset + sizeof(struct in6_addr);
+							memcpy((void *) msg + offset, (void *) &aaaaptr->address,  sizeof(IPV6BYTESZ));
+							offset = offset + sizeof(IPV6BYTESZ);
 						}
 						aaaaptr = aaaaptr->aaaanxt;
 					}

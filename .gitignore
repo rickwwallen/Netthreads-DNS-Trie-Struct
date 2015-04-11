@@ -1,0 +1,50 @@
+# Ignore directories
+00_ref_mat
+arch
+old_dev
+
+# Ignore archives
+*.tgz
+
+# Ignore swap files
+*.swp
+
+# Ignore object files
+*.o
+
+# Ignore netthreads generated files
+*.mif
+*.map
+*.static
+ricks_netfpga_dns
+
+# Ignore reference files
+ricksDNS.c
+ricksMultithreadedDNS.c
+ricksMultithreadedDNS.h
+rootTest.txt
+test.c
+
+# .ricks_netfpga_dns.c.swp
+# 00_ref_mat/
+# 20150126_ckup.tgz
+# arch/
+# arp.o
+# dev.o
+# memcpy.o
+# nf2.o
+# old_dev/
+# pktbuff.o
+# ricksDNS.c
+# ricksMultithreadedDNS.c
+# ricksMultithreadedDNS.h
+# ricks_netfpga_dns
+# ricks_netfpga_dns.data.mif
+# ricks_netfpga_dns.instr.mif
+# ricks_netfpga_dns.map
+# ricks_netfpga_dns.o
+# ricks_netfpga_dns.static
+# rootTest.txt
+# support.o
+# support_no_inline.o
+# test.c

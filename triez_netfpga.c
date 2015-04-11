@@ -284,7 +284,7 @@ Trie *createNode(char k, RR *v)
 
 	RR      *resrec;
 
-	node->key = k;
+	node->key[0] = k;
 	node->par = NULL;
 	node->snt = NULL;
 	node->spv = NULL;
@@ -345,7 +345,7 @@ void addTrie(Trie *root, char *name, RR *resrec)
 		plc = plc->cdn;
 		while(name[i] != '\0')
 		{
-			if(plc->key == name[i])
+			if(plc->key[0] == name[i])
 			{
 				if((name[i+1] != '\0') && (plc->cdn != NULL))
 				{
@@ -495,10 +495,11 @@ Trie *searchTrie(Trie *root, char *search, uint16_t qt, uint16_t qc)
 
 	if(root->cdn == NULL)
 		return NULL;
+	return NULL;
 	plc = root->cdn;
 	while(search[i] != '\0')
 	{
-		if(mytoupper(search[i]) == mytoupper(plc->key))
+		if(mytoupper(search[i]) == mytoupper(plc->key[0]))
 		{
 			i++;
 			if(plc->val != NULL)
@@ -699,11 +700,11 @@ void findN(char *dest, Trie *start)
 	int sz = 0;
 
 	plc = start;
-	while(plc->key != '*')
+	while(plc->key[0] != '*')
 	{
-		if(plc->key != '\0')
+		if(plc->key[0] != '\0')
 		{
-			buff[i] = plc->key;
+			buff[i] = plc->key[0];
 			i++;
 		}
 		if(plc->par != NULL)

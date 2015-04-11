@@ -156,8 +156,8 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	DnsHeader head;			// Hold header information
 	DnsHdrFlags fl;			// Hold flag information
 	DnsQuery qry[QRY_NO];		// Holds all the queries' qtype and qclass
-	Trie *root;			// Holds the start of the trie structure
-	Trie *result;			// Holds the node that search returns
+	//Trie *root;			// Holds the start of the trie structure
+	//Trie *result;			// Holds the node that search returns
 	char msg[PKT_SZ];		// Messages sent to and from server
 	char nme[DNM_SZ];		// Name
 	char dmn[DNM_SZ][QRY_NO];	// Holds all the queries' domain names
@@ -173,7 +173,7 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	DnsHeader *rdns;
 	u_int32_t acc;
 
-	root = (Trie *) BASE_MASK;
+	//root = (Trie *) BASE_MASK;
 //// allocate reply size
 //reply = nf_pktout_alloc(ntohs(ioq->byte_length));
 //
@@ -320,12 +320,12 @@ int process_dns(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 				{
 					strcpy(nme , dmn[i]);
 					revDN(dmn[i]);
-					result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
-					uDN(nme);
-					if(result != NULL)
-					      putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
-					else if(result == NULL)
-						fl.rcode = 3;
+					//result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
+					//uDN(nme);
+					//if(result != NULL)
+					//      putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
+					//else if(result == NULL)
+					//	fl.rcode = 3;
 				}
 			}
 			//etlu = getTime();
@@ -609,51 +609,54 @@ int process_icmp(struct net_iface *iface, struct ioq_header *ioq, struct ether_h
 	// New ICMP header pointer
 	icmp = (struct icmphdr*) pkt_pull(pkt, sizeof(struct icmphdr));
 
-	// allocate reply size
-	reply = nf_pktout_alloc(ICMP_PKT_SIZE);
-	// setup the ioq_header
-	fill_ioq((struct ioq_header*) reply, 2, ICMP_PKT_SIZE);
-	// setup the ethernet header
-	reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-	// setup the ip header
-	rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-	// setup the icmp header	
-	ricmp = (struct icmphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
+	if(icmp->type == ntohs(ICMP_ECHO))
+	{
+		// allocate reply size
+		reply = nf_pktout_alloc(ICMP_PKT_SIZE);
+		// setup the ioq_header
+		fill_ioq((struct ioq_header*) reply, 2, ICMP_PKT_SIZE);
+		// setup the ethernet header
+		reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
+		// setup the ip header
+		rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
+		// setup the icmp header	
+		ricmp = (struct icmphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
 
-	// start putting things into the packet
-	// ethernet
-	memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
-	memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
-	reth->ether_type = ETHERTYPE_IP;
-	// ip
-	rip->version_ihl = 0x45;
-	rip->tos = ip->tos; // not sure about this one
-	rip->tot_len = ip->tot_len;
-	rip->id = ip->id + 12; // not sure about this one
-	rip->frag_off = ip->frag_off;
-	rip->ttl = ip->ttl--;
-	rip->protocol = IPPROTO_ICMP;
-	rip->saddr_h = ip->daddr_h;
-	rip->saddr_l = ip->daddr_l;
-	rip->daddr_h = ip->saddr_h;
-	rip->daddr_l = ip->saddr_l;
-	rip->check = htons(0);
-	acc = ones_complement_sum((char *) rip, sizeof(struct iphdr));
-	rip->check = htons(acc);
-	acc = 0;
-	// fill icmp
-	memcpy(ricmp, icmp, (ntohs(ip->tot_len) - sizeof(struct iphdr)));
-	ricmp->type = ICMP_ECHOREPLY;
-	// init checksum to zero to calcualate
-	ricmp->checksum = ntohs(0);
-	// calculate checksum
-	acc = ones_complement_sum((char *) ricmp, (ntohs(ip->tot_len) - sizeof(struct iphdr)));
-	// assign checksum
-	ricmp->checksum = htons(acc);
+		// start putting things into the packet
+		// ethernet
+		memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
+		memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
+		reth->ether_type = ETHERTYPE_IP;
+		// ip
+		rip->version_ihl = 0x45;
+		rip->tos = ip->tos; // not sure about this one
+		rip->tot_len = ip->tot_len;
+		rip->id = ip->id + 12; // not sure about this one
+		rip->frag_off = ip->frag_off;
+		rip->ttl = ip->ttl--;
+		rip->protocol = IPPROTO_ICMP;
+		rip->saddr_h = ip->daddr_h;
+		rip->saddr_l = ip->daddr_l;
+		rip->daddr_h = ip->saddr_h;
+		rip->daddr_l = ip->saddr_l;
+		rip->check = htons(0);
+		acc = ones_complement_sum((char *) rip, sizeof(struct iphdr));
+		rip->check = htons(acc);
+		acc = 0;
+		// fill icmp
+		memcpy(ricmp, icmp, (ntohs(ip->tot_len) - sizeof(struct iphdr)));
+		ricmp->type = ICMP_ECHOREPLY;
+		// init checksum to zero to calcualate
+		ricmp->checksum = ntohs(0);
+		// calculate checksum
+		acc = ones_complement_sum((char *) ricmp, (ntohs(ip->tot_len) - sizeof(struct iphdr)));
+		// assign checksum
+		ricmp->checksum = htons(acc);
 
-	// send it
-	nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
-	pkt_free((struct pkt_buff*) reply);
+		// send it
+		nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
+		pkt_free((struct pkt_buff*) reply);
+	}
 
 	return 0;
 }
@@ -871,6 +874,7 @@ int process_eth(struct net_iface *iface, t_addr *pkt)
 			break;
 	}
 
+	pkt_free((struct pkt_buff*) pkt);
 	return result;
 }
 

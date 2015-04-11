@@ -47,7 +47,7 @@ typedef struct cliInfo
 	/*Trie Structs*/
 typedef struct trieptr
 {
-	char key;
+	char key[4];
 	struct rr *val;
 	struct trieptr *par;
 	struct trieptr *snt;

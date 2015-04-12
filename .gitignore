@@ -2,6 +2,7 @@
 00_ref_mat
 arch
 old_dev
+archive
 
 # Ignore archives
 *.tgz

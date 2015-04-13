@@ -925,10 +925,17 @@ int main(void)
 	{
 	   while (1) {}
 	}
-	
+
+	nf_lock(LOCK_INIT); // should get it on the first attempt 	
 	// initialize
 	nf_pktout_init();
 	nf_pktin_init();
+
+	// initialize the multithreaded memory allocator
+	sp_init_mem_single();  
+	sp_init_mem_pool();
+
+	nf_unlock(LOCK_INIT);
 
 	// This is to just send an ARP request to router
 	// allocate an output buffer

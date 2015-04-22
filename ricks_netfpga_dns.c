@@ -3,7 +3,7 @@
  * * DNS SERVER THE UTILIZES TRIE STRUCTURE AS THE LOOKUP DATABASE
  * * CREATED BY:	RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	JANUARY.21.2015
+ * * DATE LAST MOD:	APRIL.22.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -38,24 +38,16 @@
  * *		-Took out some debugging packet sends that were commented out
  * *		-Took out packet sent to switch
  * *	January.21.2015-Commented out includes since they are included in dns_netpga.h
- * *		-
+ * *	April.21.2015-Fixed error of DNS not responding from previous commits unknown why
+ * *		-Fix involved building and sending DNS response twice bad fix
+ * *	April.22.2015-Error turns out to be lingering incorrect ethernet mac address sent
+ * *		-Fixed error with DNS packets not sending correct ethernet mac address
+ * *		-Hit ioq limit and required the iface to be redfined in dns header message
+ * *		-Subsequently resolved bad fix from previous day and some odd hangs
+ * *		-Cleaned up commits and old includes
  * */
 /**********************************************************************/
-//#include "structs_netfpga.h"
 #include "dns_netfpga.h"
-//#include "my_inet.c"
-//#include "triez_netfpga.c"
-//#include "shared_functions_netfpga.c"
-
-//#include "common.h"
-//#include "pktbuff.h"
-//#include "dev.h"
-//#include "support.h"
-
-//#include <netinet/udp.h>
-//#include <stdio.h>
-//#include <arpa/inet.h>
-//#include <support.h>
 
 #define ARP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct ether_arp))
 #define ICMP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct icmphdr) + 512)
@@ -184,7 +176,9 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	iface2.ip[1] = 168;
 	iface2.ip[2] = 0;
 	iface2.ip[3] = 100;
+
 	//root = (Trie *) BASE_MASK;
+
 //// allocate reply size
 //reply = nf_pktout_alloc(ntohs(ioq->byte_length));
 //
@@ -276,10 +270,10 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	log("DATE TS,ID,QUERY QR,OPCODE,QDCOUNT,QUERY,QTYPE,QCLASS,RCODE,ANCOUNT,NSCOUNT,ARCOUNT,TIME TO LOOKUP(SECONDS),TIME TO SEND BACK(SECONDS)\n");
 
 	memset(&msg, '\0', PKT_SZ);
+
 	// New DNS header pointer
 	dns = (DnsHeader *) pkt_pull(pkt, sizeof(DnsHeader));
 	memcpy(&msg, dns, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
-	//memcpy(msg, pkt, (ntohs(ioq->byte_length) - sizeof(struct ioq_header) - sizeof(struct ether_header) - sizeof(struct iphdr) - sizeof(struct udphdr)));
 	
 	strToHdr(msg, &head);
 	u16IToFlags(&fl, head.flags);
@@ -349,75 +343,6 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 		if(fl.rcode == 0)
 			if((head.ancount == 0) || (head.nscount > 0) || (head.arcount > 0))
 				fl.rcode = 3;
-		////put header back in
-		////RCODE,ANCOUNT,NSCOUNT,ARCOUNT,TIMELOOKUP,TIMETOTAL
-		//log("%d,%d,%d,%d,", (int) fl.rcode, (int) head.ancount, (int) head.nscount, (int) head.arcount);
-		//flagsToU16I(fl, &head.flags);
-		//hdrToStr(msg, &head);
-
-		//// Push to f(x) to build the DNS Response
-		//ioq->byte_length = htons(ntohs(ioq->byte_length) + (offset - offset2));
-
-		///* Make Reply and Send awww PACKET */
-		//// allocate reply size
-		//reply = nf_pktout_alloc(ntohs(ioq->byte_length));
-		//// setup the ioq_header
-		//fill_ioq((struct ioq_header*) reply, 2, ntohs(ioq->byte_length));
-		//// setup the ethernet header
-		//reth = (struct ether_header*) (reply + sizeof(struct ioq_header));
-		//// setup the IP header
-		//rip = (struct iphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header));
-		//// setup the UDP header	
-		//rudp = (struct udphdr*) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr));
-		////setup the DNS header
-		//rdns = (DnsHeader *) (reply + sizeof(struct ioq_header) + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct udphdr));
-
-		//// start putting things into the packet
-		//// ethernet
-		//memcpy(reth->ether_shost, &iface2.mac, ETH_ALEN);
-		//memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
-		//reth->ether_type = ETHERTYPE_IP;
-		//// ip
-		//rip->version_ihl = 0x45;
-		//rip->tos = ip->tos; // not sure about this one
-		//rip->tot_len = htons(ntohs(ioq->byte_length) - sizeof(struct ether_header));
-		//rip->id = ip->id + 12; // not sure about this one
-		//rip->frag_off = ip->frag_off;
-		//rip->ttl = ip->ttl--;
-		//rip->protocol = IPPROTO_UDP;
-		//rip->saddr_h = ip->daddr_h;
-		//rip->saddr_l = ip->daddr_l;
-		//rip->daddr_h = ip->saddr_h;
-		//rip->daddr_l = ip->saddr_l;
-		////acc=0;
-		//rip->check = htons(0);
-		//acc = ones_complement_sum((char *) rip, sizeof(struct iphdr));
-		//rip->check = htons(acc);
-		//acc=0;
-		//// udp
-		//rudp->source = udp->dest;
-		//rudp->dest = udp->source;
-		//rudp->len    = htons(ntohs(rip->tot_len) - sizeof(struct iphdr));
-		//// dns
-		//memcpy(rdns, msg, sizeof(DnsHeader) + offset); // Push the internal buffer msg to pkt
-		//// init checksum to zero to calcualate
-		//rudp->check = htons(0);
-		//// calculate checksum
-		//acc =rip->saddr_l;
-		//acc = acc + rip->saddr_h;
-		//acc = acc + rip->daddr_l;
-		//acc = acc + rip->daddr_h;
-		//acc = acc + rip->protocol;
-		//acc = acc + rudp->len;
-		//acc = acc + my_ones_complement_sum((char *) rudp, ntohs(rudp->len));
-		//acc = my_fold(acc);
-		//// put checksum in
-		//rudp->check = htons(~acc);
-
-		//// send it
-		//nf_pktout_send(reply, reply + (htons(ioq->byte_length)) + sizeof(struct ioq_header)); 
-		//pkt_free((struct pkt_buff*) reply);
-		///* end PACKET send */
 	}//end else from opcode check
 
 	//put header back in
@@ -948,7 +873,6 @@ int main(void)
 	   while (1) {}
 	}
 
-//	nf_lock(LOCK_INIT); // should get it on the first attempt 	
 	// initialize
 	nf_pktout_init();
 	nf_pktin_init();
@@ -956,8 +880,6 @@ int main(void)
 	// initialize the multithreaded memory allocator
 	sp_init_mem_single();  
 	sp_init_mem_pool();
-
-//	nf_unlock(LOCK_INIT);
 
 	// This is to just send an ARP request to router
 	// allocate an output buffer
@@ -995,8 +917,9 @@ int main(void)
 
 	// send it
 	nf_pktout_send(pkt, pkt + ARP_PKT_SIZE); 
+	//END SEND ROUTER
 
-	// This is to just send an ARP request to router
+	// This is to just send an ARP request to switch
 	// allocate an output buffer
 	pkt = nf_pktout_alloc(ARP_PKT_SIZE);
 
@@ -1032,8 +955,9 @@ int main(void)
 
 	// send it
 	nf_pktout_send(pkt, pkt + ARP_PKT_SIZE); 
+	//END SEND SWITCH
 
-	// This is to just send an ARP request to router
+	// This is to just send an ARP request to host
 	// allocate an output buffer
 	pkt = nf_pktout_alloc(ARP_PKT_SIZE);
 
@@ -1069,6 +993,8 @@ int main(void)
 
 	// send it
 	nf_pktout_send(pkt, pkt + ARP_PKT_SIZE); 
+	//END SEND HOST
+
 	pkt_free((struct pkt_buff*) pkt);
 
 	// start in on replying

@@ -3,7 +3,7 @@
  * * ONLY CONTAIN NETFPGA SERVER FUNCTIONS DUE TO LIMITED C FUNCTIONS USED
  * * CREATED BY:   RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	SEPTEMBER.29.2014
+ * * DATE LAST MOD:	APRIL.24.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -21,7 +21,7 @@
  * *       <date>-<description>
  * *	September.29.2014-Adapted from sharedFunctions.c
  * *	November.10.2014-Removed print functions
- * *		-
+ * *	April.23.2015-Added function mytolower
  * */
 /**********************************************************************/
 #include "shared_functions_netfpga.h"
@@ -461,6 +461,97 @@ char mytoupper(char chk)
 			break;
 		case	'z':
 			res = 'Z';
+			break;
+		default:
+			res = chk;
+			break;
+	}
+	return res;
+}
+
+/* F(X) TO CHANGE CHAR TO LOWERCASE */
+char mytolower(char chk)
+{
+	char res;
+	switch(chk)
+	{
+		case	'A':
+			res = 'a';
+			break;
+		case	'B':
+			res = 'b';
+			break;
+		case	'C':
+			res = 'c';
+			break;
+		case	'D':
+			res = 'd';
+			break;
+		case	'E':
+			res = 'e';
+			break;
+		case	'F':
+			res = 'f';
+			break;
+		case	'G':
+			res = 'g';
+			break;
+		case	'H':
+			res = 'h';
+			break;
+		case	'I':
+			res = 'i';
+			break;
+		case	'J':
+			res = 'j';
+			break;
+		case	'K':
+			res = 'k';
+			break;
+		case	'L':
+			res = 'l';
+			break;
+		case	'M':
+			res = 'm';
+			break;
+		case	'N':
+			res = 'n';
+			break;
+		case	'O':
+			res = 'o';
+			break;
+		case	'P':
+			res = 'p';
+			break;
+		case	'Q':
+			res = 'q';
+			break;
+		case	'R':
+			res = 'r';
+			break;
+		case	'S':
+			res = 's';
+			break;
+		case	'T':
+			res = 't';
+			break;
+		case	'U':
+			res = 'u';
+			break;
+		case	'V':
+			res = 'v';
+			break;
+		case	'W':
+			res = 'w';
+			break;
+		case	'X':
+			res = 'x';
+			break;
+		case	'Y':
+			res = 'y';
+			break;
+		case	'Z':
+			res = 'z';
 			break;
 		default:
 			res = chk;

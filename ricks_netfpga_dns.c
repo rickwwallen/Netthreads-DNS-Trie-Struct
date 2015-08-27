@@ -48,10 +48,11 @@
  * */
 /**********************************************************************/
 #include "dns_netfpga.h"
+#include "trie_loader.c"
 
 #define ARP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct ether_arp))
 #define ICMP_PKT_SIZE (sizeof(struct ioq_header)  + sizeof(struct ether_header) + sizeof(struct iphdr) + sizeof(struct icmphdr) + 512)
-//#define BASE_MASK 0x4000000
+#define TRIE 0x4000000
 
 /*
   This is the skeleton of a typical NetThreads application.
@@ -143,13 +144,14 @@ u_int16_t ones_complement_sum(char *data, int len)
 
 // Process DNS Query
 int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, struct pkt_buff *pkt)
+//int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct udphdr *udp, struct pkt_buff *pkt, Trie *root)
 {
 	DnsHeader *dns;			// DNS header pointer
 	DnsHeader head;			// Hold header information
 	DnsHdrFlags fl;			// Hold flag information
 	DnsQuery qry[QRY_NO];		// Holds all the queries' qtype and qclass
-	//Trie *root;			// Holds the start of the trie structure
-	//Trie *result;			// Holds the node that search returns
+	Trie *root;			// Holds the start of the trie structure
+	Trie *result;			// Holds the node that search returns
 	char msg[PKT_SZ];		// Messages sent to and from server
 	char nme[DNM_SZ];		// Name
 	char dmn[DNM_SZ][QRY_NO];	// Holds all the queries' domain names
@@ -164,20 +166,20 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	struct udphdr *rudp;
 	DnsHeader *rdns;
 	u_int32_t acc;
-	struct net_iface iface2;
+	struct net_iface iface;
 
-	iface2.mac[0] = 0x00;
-	iface2.mac[1] = 0x43;
-	iface2.mac[2] = 0x32;
-	iface2.mac[3] = 0x46;
-	iface2.mac[4] = 0x4e;
-	iface2.mac[5] = 0x00;
-	iface2.ip[0] = 192;
-	iface2.ip[1] = 168;
-	iface2.ip[2] = 0;
-	iface2.ip[3] = 100;
+	iface.mac[0] = 0x00;
+	iface.mac[1] = 0x43;
+	iface.mac[2] = 0x32;
+	iface.mac[3] = 0x46;
+	iface.mac[4] = 0x4e;
+	iface.mac[5] = 0x00;
+	iface.ip[0] = 192;
+	iface.ip[1] = 168;
+	iface.ip[2] = 0;
+	iface.ip[3] = 100;
 
-	//root = (Trie *) BASE_MASK;
+	root = (Trie *) TRIE;
 
 //// allocate reply size
 //reply = nf_pktout_alloc(ntohs(ioq->byte_length));
@@ -196,7 +198,7 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 //
 //// start putting things into the packet
 //// ethernet
-//memcpy(reth->ether_shost, iface->mac, ETH_ALEN);
+//memcpy(reth->ether_shost, &iface.mac, ETH_ALEN);
 //memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
 //reth->ether_type = ETHERTYPE_IP;
 //
@@ -328,12 +330,12 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 				{
 					strcpy(nme , dmn[i]);
 					revDN(dmn[i]);
-					//result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
+					result = searchTrie(root, dmn[i], qry[i].qtype, qry[i].qclass);
 					uDN(nme);
-					//if(result != NULL)
-					//      putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
-					//else if(result == NULL)
-					//	fl.rcode = 3;
+					if(result != NULL)
+					      putResRecStr(&fl, &head, root, result, &qry[i], msg+offset, &offset, nme);
+					else if(result == NULL)
+						fl.rcode = 3;
 				}
 			}
 			//etlu = getTime();
@@ -370,7 +372,7 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	
 	// start putting things into the packet
 	// ethernet
-	memcpy(reth->ether_shost, &iface2.mac, ETH_ALEN);
+	memcpy(reth->ether_shost, &iface.mac, ETH_ALEN);
 	memcpy(reth->ether_dhost, eth->ether_shost, ETH_ALEN);
 	reth->ether_type = ETHERTYPE_IP;
 	// ip
@@ -396,6 +398,7 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	rudp->len    = htons(ntohs(rip->tot_len) - sizeof(struct iphdr));
 	// dns
 	memcpy(rdns, msg, rudp->len - sizeof(struct udphdr)); // Push the internal buffer msg to pkt
+	memcpy(rdns + offset + 4, root, sizeof(Trie)); // Push the internal buffer msg to pkt
 	// init checksum to zero to calcualate
 	rudp->check = htons(0);
 	// calculate checksum
@@ -422,7 +425,8 @@ int process_dns(struct ioq_header *ioq, struct ether_header *eth, struct iphdr *
 	return rc;
 }
 
-int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct pkt_buff *pkt)
+//int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct pkt_buff *pkt)
+int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct iphdr *ip, struct pkt_buff *pkt, Trie *root)
 {
 	struct udphdr *udp;
 	int result;
@@ -522,6 +526,7 @@ int process_udp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 		case UDP_PT:
 			log("Is DNS Query\n");
 			result = process_dns(ioq, eth, ip, udp, pkt);
+			//result = process_dns(ioq, eth, ip, udp, pkt, root);
 			break;
 		default:
 			result = 1;
@@ -595,7 +600,8 @@ int process_icmp(struct net_iface *iface, struct ioq_header *ioq, struct ether_h
 	return 0;
 }
 
-int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct pkt_buff *pkt)
+//int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct pkt_buff *pkt)
+int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_header *eth, struct pkt_buff *pkt, Trie *root)
 {
 	int result;
 	struct iphdr *ip;
@@ -694,7 +700,8 @@ int process_ip(struct net_iface *iface, struct ioq_header *ioq, struct ether_hea
 			result = process_icmp(iface, ioq, eth, ip, pkt);
 			break;
 		case IPPROTO_UDP:
-			result = process_udp(iface, ioq, eth, ip, pkt);
+			//result = process_udp(iface, ioq, eth, ip, pkt);
+			result = process_udp(iface, ioq, eth, ip, pkt, root);
 			break;
 		default:
 			result = 1;
@@ -778,7 +785,8 @@ int process_arp(struct net_iface *iface, struct ioq_header *ioq, struct ether_he
 	return 0;
 } 
 
-int process_eth(struct net_iface *iface, t_addr *pkt)
+//int process_eth(struct net_iface *iface, t_addr *pkt)
+int process_eth(struct net_iface *iface, t_addr *pkt, Trie *root)
 {
 	struct pkt_buff my_pkt; 
 	int result;
@@ -802,7 +810,8 @@ int process_eth(struct net_iface *iface, t_addr *pkt)
 			result = process_arp(iface, ioq, eth, &my_pkt);
 			break;
 		case ETHERTYPE_IP:
-			result = process_ip(iface, ioq, eth, &my_pkt);
+			//result = process_ip(iface, ioq, eth, &my_pkt);
+			result = process_ip(iface, ioq, eth, &my_pkt, root);
 		default:
 			result = 1;
 			break;
@@ -822,6 +831,7 @@ int main(void)
 	unsigned char dest_ip[4];
 	unsigned char dest_ip2[4];
 	unsigned char dest_ip3[4];
+	Trie *root;			//Holds the Trie structure
 
 	// iface is not shared, it's on the stack
 	//00:4e:46:32:43:00
@@ -880,6 +890,8 @@ int main(void)
 	// initialize the multithreaded memory allocator
 	sp_init_mem_single();  
 	sp_init_mem_pool();
+
+	root = load_zone();
 
 	// This is to just send an ARP request to router
 	// allocate an output buffer
@@ -1004,7 +1016,8 @@ int main(void)
 		if(!nf_pktin_is_valid(pkt))
 			continue;
 
-		process_eth(&iface, pkt);
+		//process_eth(&iface, pkt);
+		process_eth(&iface, pkt, root);
 
 		nf_pktin_free(pkt);
 	} 

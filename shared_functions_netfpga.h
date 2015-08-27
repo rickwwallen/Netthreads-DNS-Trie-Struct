@@ -3,7 +3,7 @@
  * * HEADER FILE FOR shared_functions_netfpga.c
  * * CREATED BY:   RICK W. WALLEN
  * * DATE CREATED:	SEPTEMBER.29.2014
- * * DATE LAST MOD:	SEPTEMBER.29.2014
+ * * DATE LAST MOD:	APRIL.24.2015
  * *     ___________
  * *    |           |
  * *  [[|___________|]]
@@ -21,6 +21,7 @@
  * *       <date>-<description>
  * *	September.29.2014-Adapted from shared_functions.h
  * *	November.10.2014-Removed print functions
+ * *	April.23.2015-Added mytolower
  * */
 /**********************************************************************/
 #ifndef _SHARED_FUNCTIONS_NETFPGA_
@@ -63,5 +64,8 @@ int myisalnum(char chk);
 
 /* F(X) TO CHANGE CHAR TO UPPERCASE */
 char mytoupper(char chk);
+
+/* F(X) TO CHANGE CHAR TO LOWERCASE */
+char mytolower(char chk);
 
 #endif //end if shared_functions_netfpga.h

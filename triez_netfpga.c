@@ -28,6 +28,7 @@
 #include "triez_netfpga.h"
 #include "dns_netfpga.h"
 #include "memory.c"
+#include "inet_pton.c"
 
 /* F(X) TO CHECK DOMAIN NAME DOESN'T CONTAIN INVALID CHARACTERS */
 uint16_t checkDN(char *domName)
@@ -185,8 +186,8 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 	{
 		case a:
 			resrec->ars =		(A *) sp_malloc(sizeof(A));
-			if(inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
-			//if(my_inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
+			//if(inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
+			if(my_inet_pton(AF_INET, buff[c], &resrec->ars->address) == 1);
 			else
 				//log("\n\nERROR\t%s\n\n", buff[c]);
 			//resrec->ars->address =		strdup(buff[c]);
@@ -200,6 +201,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 		case ns:
 			resrec->nsrs =		(NS *) sp_malloc(sizeof(NS));
 			//resrec->nsrs->nsdname =		strdup(buff[c]);
+			resrec->nsrs->nsdname = sp_malloc(strlen(buff[c])*sizeof(char));
 			memcpy(resrec->nsrs->nsdname, buff[c], strlen(buff[c]));
 			resrec->nsrs->rclass =		class;
 			resrec->nsrs->ttl =		ttl;
@@ -209,6 +211,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 		case cname:
 			resrec->cnamers =		(CNAME *) sp_malloc(sizeof(CNAME));
 			//resrec->cnamers->cname =	strdup(buff[c]);
+			resrec->cnamers->cname = sp_malloc(strlen(buff[c])*sizeof(char));
 			memcpy(resrec->cnamers->cname, buff[c], strlen(buff[c]));
 			resrec->cnamers->rclass =	class;
 			resrec->cnamers->ttl =		ttl;
@@ -218,7 +221,9 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->soars =			(SOA *) sp_malloc(sizeof(SOA));
 			//resrec->soars->mname =		strdup(buff[c]);
 			//resrec->soars->rname =		strdup(buff[c+1]);
+			resrec->soars->mname = sp_malloc(strlen(buff[c])*sizeof(char));
 			memcpy(resrec->soars->mname, buff[c], strlen(buff[c]));
+			resrec->soars->rname = sp_malloc(strlen(buff[c+1])*sizeof(char));
 			memcpy(resrec->soars->rname, buff[c+1], strlen(buff[c+1]));
 			resrec->soars->serial =		(uint32_t) atoi(buff[c+2]);
 			resrec->soars->refresh =	(int32_t) atoi(buff[c+3]);
@@ -238,6 +243,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 		case ptr:
 			resrec->ptrrs =			(PTR *) sp_malloc(sizeof(PTR));
 			//resrec->ptrrs->ptrdname =	strdup(buff[c]);
+			resrec->ptrrs->ptrdname = sp_malloc(strlen(buff[c])*sizeof(char));
 			memcpy(resrec->ptrrs->ptrdname, buff[c], strlen(buff[c]));
 			resrec->ptrrs->rclass =		class;
 			resrec->ptrrs->ttl =		ttl;
@@ -247,6 +253,7 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			resrec->mxrs =			(MX *) sp_malloc(sizeof(MX));
 			resrec->mxrs->preference =	(uint16_t) atoi(buff[c]);
 			//resrec->mxrs->exchange =	strdup(buff[c+1]);
+			resrec->mxrs->exchange = sp_malloc(strlen(buff[c+1])*sizeof(char));
 			memcpy(resrec->mxrs->exchange, buff[c+1], strlen(buff[c+1]));
 			resrec->mxrs->rclass =		class;
 			resrec->mxrs->ttl =		ttl;
@@ -256,8 +263,8 @@ RR *createResRec(char *rec, uint32_t *ttlMin, uint16_t *rclass)
 			break;
 		case aaaa:
 			resrec->aaaars =		(AAAA *) sp_malloc(sizeof(AAAA));
-			if(inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
-			//if(my_inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
+			//if(inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
+			if(my_inet_pton(AF_INET6, buff[c], &resrec->aaaars->address) == 1);
 			else
 				//log("\n\nERROR\n\n");
 			//resrec->aaaars->address =	strdup(buff[c]);
@@ -285,6 +292,9 @@ Trie *createNode(char k, RR *v)
 	RR      *resrec;
 
 	node->key[0] = k;
+	node->key[1] = '\0';
+	node->key[2] = '\0';
+	node->key[3] = '\0';
 	node->par = NULL;
 	node->snt = NULL;
 	node->spv = NULL;
